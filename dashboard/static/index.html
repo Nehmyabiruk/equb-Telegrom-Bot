@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ethio Car Equb — Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="bg-pattern"></div>
+
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">🚗</div>
+        <div>
+          <h1>Ethio Car Equb</h1>
+          <p>Admin Dashboard</p>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-item active" data-tab="approved">
+          <span class="nav-icon">✅</span>
+          Approved Users
+        </button>
+        <button class="nav-item" data-tab="overview">
+          <span class="nav-icon">📊</span>
+          Overview
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <p class="live-indicator">
+          <span class="pulse"></span>
+          Live sync every 15s
+        </p>
+        <p class="last-updated" id="lastUpdated">Loading…</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h2 id="pageTitle">Approved Participants</h2>
+          <p class="subtitle">Registered users appear here automatically after admin approval</p>
+        </div>
+        <div class="topbar-actions">
+          <div class="search-wrap">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="search" id="searchInput" placeholder="Search by name or phone…" />
+          </div>
+          <button class="btn btn-primary" id="downloadPdfBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download PDF
+          </button>
+          <button class="btn btn-ghost" id="refreshBtn" title="Refresh now">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <section class="stats-grid" id="statsGrid">
+        <article class="stat-card stat-approved">
+          <div class="stat-label">Approved</div>
+          <div class="stat-value" id="statApproved">—</div>
+          <div class="stat-desc">Visible on this dashboard</div>
+        </article>
+        <article class="stat-card stat-rejected">
+          <div class="stat-label">Rejected</div>
+          <div class="stat-value" id="statRejected">—</div>
+          <div class="stat-desc">Stored in database only</div>
+        </article>
+        <article class="stat-card stat-pending">
+          <div class="stat-label">Pending Review</div>
+          <div class="stat-value" id="statPending">—</div>
+          <div class="stat-desc">Awaiting admin action</div>
+        </article>
+        <article class="stat-card stat-total">
+          <div class="stat-label">Total Registrations</div>
+          <div class="stat-value" id="statTotal">—</div>
+          <div class="stat-desc">All registered users</div>
+        </article>
+      </section>
+
+      <section class="panel" id="approvedPanel">
+        <div class="panel-header">
+          <h3>Approved Participants List</h3>
+          <span class="badge" id="approvedCount">0 users</span>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Participant No.</th>
+                <th>Full Name</th>
+                <th>Phone</th>
+                <th>Payment Method</th>
+                <th>Payment For</th>
+                <th>Approved On</th>
+              </tr>
+            </thead>
+            <tbody id="participantsBody">
+              <tr class="loading-row">
+                <td colspan="7">Loading approved participants…</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="empty-state hidden" id="emptyState">
+          <div class="empty-icon">📋</div>
+          <h4>No approved participants yet</h4>
+          <p>When the admin approves a registration in Telegram, the user will appear here automatically.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast hidden" id="toast"></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
