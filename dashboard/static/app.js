@@ -13,9 +13,15 @@ const els = {
   emptyState: document.getElementById("emptyState"),
   lastUpdated: document.getElementById("lastUpdated"),
   searchInput: document.getElementById("searchInput"),
+  methodFilter: document.getElementById("methodFilter"),
   downloadPdfBtn: document.getElementById("downloadPdfBtn"),
+  exportCsvBtn: document.getElementById("exportCsvBtn"),
   refreshBtn: document.getElementById("refreshBtn"),
   toast: document.getElementById("toast"),
+  pdfPasswordDialog: document.getElementById("pdfPasswordDialog"),
+  pdfPasswordForm: document.getElementById("pdfPasswordForm"),
+  pdfPasswordInput: document.getElementById("pdfPasswordInput"),
+  cancelPdfBtn: document.getElementById("cancelPdfBtn"),
 };
 
 function formatDate(isoString) {
@@ -45,9 +51,11 @@ function showToast(message, type = "success") {
   }, 3200);
 }
 
-function renderTable(participants) {
+function getFilteredParticipants(participants = allParticipants) {
   const query = els.searchInput.value.trim().toLowerCase();
-  const filtered = participants.filter((p) => {
+  const method = els.methodFilter.value;
+  return participants.filter((p) => {
+    if (method && p.payment_method !== method) return false;
     if (!query) return true;
     const haystack = [
       p.participant_name,
@@ -59,6 +67,10 @@ function renderTable(participants) {
       .toLowerCase();
     return haystack.includes(query);
   });
+}
+
+function renderTable(participants) {
+  const filtered = getFilteredParticipants(participants);
 
   els.approvedCount.textContent = `${filtered.length} user${filtered.length === 1 ? "" : "s"}`;
 
@@ -133,14 +145,52 @@ async function refreshDashboard() {
   }
 }
 
-async function downloadPdf() {
+function escapeCsv(value) {
+  const text = String(value ?? "");
+  return `"${text.replaceAll('"', '""')}"`;
+}
+
+function exportCsv() {
+  const rows = getFilteredParticipants();
+  if (!rows.length) {
+    showToast("There are no matching participants to export", "error");
+    return;
+  }
+
+  const headers = ["Participant No.", "Full Name", "Phone", "Payment Method", "Payment For", "Approved On"];
+  const csv = [headers, ...rows.map((p) => [
+    p.participant_number ? `#${String(p.participant_number).padStart(3, "0")}` : "",
+    p.participant_name,
+    p.phone,
+    (p.payment_method || "").toUpperCase(),
+    formatPaymentFor(p.payment_for),
+    formatDate(p.verified_at),
+  ])].map((row) => row.map(escapeCsv).join(",")).join("\n");
+
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `ethio-car-equb-approved-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  showToast(`${rows.length} participant${rows.length === 1 ? "" : "s"} exported to CSV`);
+}
+
+async function downloadPdf(password) {
   try {
     els.downloadPdfBtn.disabled = true;
     els.downloadPdfBtn.textContent = "Generating…";
 
-    const response = await fetch("/api/download-pdf");
+    const response = await fetch("/api/download-pdf", {
+      headers: { "X-Dashboard-Password": password },
+    });
     if (!response.ok) {
-      throw new Error("PDF download failed");
+      const message = response.status === 401
+        ? "Incorrect dashboard password"
+        : "PDF download failed";
+      throw new Error(message);
     }
 
     const blob = await response.blob();
@@ -156,7 +206,7 @@ async function downloadPdf() {
     showToast("PDF downloaded successfully");
   } catch (error) {
     console.error(error);
-    showToast("Failed to download PDF", "error");
+    showToast(error.message || "Failed to download PDF", "error");
   } finally {
     els.downloadPdfBtn.disabled = false;
     els.downloadPdfBtn.innerHTML = `
@@ -167,7 +217,21 @@ async function downloadPdf() {
 }
 
 els.searchInput.addEventListener("input", () => renderTable(allParticipants));
-els.downloadPdfBtn.addEventListener("click", downloadPdf);
+els.methodFilter.addEventListener("change", () => renderTable(allParticipants));
+els.exportCsvBtn.addEventListener("click", exportCsv);
+els.downloadPdfBtn.addEventListener("click", () => {
+  els.pdfPasswordInput.value = "";
+  els.pdfPasswordDialog.showModal();
+  els.pdfPasswordInput.focus();
+});
+els.cancelPdfBtn.addEventListener("click", () => els.pdfPasswordDialog.close());
+els.pdfPasswordForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const password = els.pdfPasswordInput.value;
+  if (!password) return;
+  els.pdfPasswordDialog.close();
+  downloadPdf(password);
+});
 els.refreshBtn.addEventListener("click", refreshDashboard);
 
 refreshDashboard();

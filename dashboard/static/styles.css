@@ -243,6 +243,16 @@ body {
   box-shadow: 0 12px 28px var(--green-glow);
 }
 
+.btn-secondary {
+  background: rgba(212, 168, 83, 0.12);
+  border: 1px solid rgba(212, 168, 83, 0.35);
+  color: var(--gold-light);
+}
+
+.btn-secondary:hover {
+  background: rgba(212, 168, 83, 0.2);
+}
+
 .btn-ghost {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -252,6 +262,66 @@ body {
 
 .btn-ghost:hover {
   background: var(--surface-2);
+}
+
+.select-control {
+  appearance: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.88rem;
+  padding: 0.6rem 2rem 0.6rem 0.85rem;
+}
+
+.password-dialog {
+  width: min(420px, calc(100% - 2rem));
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 1.35rem;
+  box-shadow: var(--shadow);
+}
+
+.password-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(3px);
+}
+
+.password-dialog h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.35rem;
+}
+
+.password-dialog p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.password-dialog input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: var(--text);
+  font: inherit;
+  outline: none;
+  padding: 0.7rem 0.8rem;
+}
+
+.password-dialog input:focus {
+  border-color: var(--green-light);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 1rem;
 }
 
 .stats-grid {

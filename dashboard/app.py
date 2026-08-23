@@ -7,9 +7,10 @@ from datetime import datetime
 from pathlib import Path
 
 from contextlib import asynccontextmanager
+from secrets import compare_digest
 
 from aiogram.types import Update
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -166,8 +167,15 @@ def get_rejected_users(db: Session = Depends(get_db_session)):
 
 
 @app.get("/api/download-pdf")
-def download_pdf(password: str | None = None, db: Session = Depends(get_db_session)):
-    if DASHBOARD_PASSWORD and password != DASHBOARD_PASSWORD:
+def download_pdf(
+    dashboard_password: str | None = Header(
+        default=None, alias="X-Dashboard-Password"
+    ),
+    db: Session = Depends(get_db_session),
+):
+    if DASHBOARD_PASSWORD and not compare_digest(
+        dashboard_password or "", DASHBOARD_PASSWORD
+    ):
         raise HTTPException(status_code=401, detail="Invalid dashboard password")
 
     payments = _get_approved_payments(db)
