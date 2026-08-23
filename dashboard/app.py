@@ -6,14 +6,18 @@ Serves approved participants to the frontend and generates PDF exports.
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException
+from contextlib import asynccontextmanager
+
+from aiogram.types import Update
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session, joinedload
 
-from config import DASHBOARD_PASSWORD
-from database import get_db
+from bot import bot, dp
+from config import DASHBOARD_PASSWORD, PUBLIC_BASE_URL, TELEGRAM_WEBHOOK_SECRET
+from database import get_db, init_db
 from models import Payment, User
 from pdf_generator import generate_approved_users_pdf
 
@@ -27,10 +31,28 @@ def get_db_session():
     finally:
         db.close()
 
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    # Create tables for a new Render Postgres database before handling requests.
+    init_db()
+
+    # A public Render URL enables Telegram webhook delivery. Leaving this unset
+    # preserves local dashboard-only development and polling via `python bot.py`.
+    if PUBLIC_BASE_URL:
+        await bot.set_webhook(
+            url=f"{PUBLIC_BASE_URL}/telegram/webhook",
+            secret_token=TELEGRAM_WEBHOOK_SECRET or None,
+            allowed_updates=dp.resolve_used_update_types(),
+        )
+    yield
+    await bot.session.close()
+
+
 app = FastAPI(
     title="Ethio Car Equb Dashboard",
     description="Admin dashboard for approved Equb participants",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -39,6 +61,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.post("/telegram/webhook")
+async def telegram_webhook(request: Request):
+    """Receive updates from Telegram instead of keeping a polling process alive."""
+    if TELEGRAM_WEBHOOK_SECRET:
+        received_secret = request.headers.get("X-Telegram-Bot-Api-Secret-Token")
+        if received_secret != TELEGRAM_WEBHOOK_SECRET:
+            raise HTTPException(status_code=403, detail="Invalid Telegram webhook secret")
+
+    update = Update.model_validate(await request.json())
+    await dp.feed_update(bot, update)
+    return {"ok": True}
 
 
 def _participant_payload(payment: Payment) -> dict:

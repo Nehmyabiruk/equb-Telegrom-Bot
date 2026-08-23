@@ -1013,16 +1013,16 @@ async def receive_transaction_reference(
             db.flush()
 
         else:
-
+            # A User represents the Telegram account. Participant details belong
+            # to an individual payment because one Telegram account can register
+            # several people. Do not overwrite the original account profile here.
             user.language = language
 
-            user.participant_name = data[
-                "full_name"
-            ]
-
-            user.phone = data[
-                "phone"
-            ]
+            user.telegram_username = (
+                message.from_user.username
+                if message.from_user.username
+                else None
+            )
 
         # -------------------------------------------------
         # RECEIPT
@@ -1063,6 +1063,11 @@ async def receive_transaction_reference(
             payment_for=data.get("payment_for"),
 
             participant_name=data.get("full_name") or user.participant_name,
+
+            # Snapshot these at submission, not approval. Otherwise a later
+            # registration from the same Telegram account can overwrite the
+            # phone number shown for an earlier participant.
+            participant_phone=data.get("phone") or user.phone,
 
             status="PENDING"
         )
@@ -1423,10 +1428,10 @@ async def approve_payment(
             f"#{participant_number:03d}\n\n"
 
             f"👤 <b>ስም</b>\n"
-            f"{user.participant_name}\n\n"
+            f"{payment.participant_name or user.participant_name}\n\n"
 
             f"📱 <b>ስልክ</b>\n"
-            f"{mask_phone(user.phone)}\n\n"
+            f"{mask_phone(payment.participant_phone or user.phone)}\n\n"
 
             "💳 <b>የክፍያ ሁኔታ</b>\n"
             "✅ ተረጋግጧል\n\n"

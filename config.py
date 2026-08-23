@@ -19,9 +19,12 @@ DATABASE_URL = os.getenv(
     "postgresql+psycopg2://postgres:postgres@localhost:5432/ethio_car_equb"
 )
 
-DASHBOARD_HOST = os.getenv("DASHBOARD_HOST", "127.0.0.1")
-DASHBOARD_PORT = int(os.getenv("DASHBOARD_PORT", "8000"))
+# Render supplies PORT at runtime. DASHBOARD_PORT remains supported for local use.
+DASHBOARD_HOST = os.getenv("DASHBOARD_HOST", "0.0.0.0")
+DASHBOARD_PORT = int(os.getenv("PORT", os.getenv("DASHBOARD_PORT", "8000")))
 DASHBOARD_PASSWORD = os.getenv("DASHBOARD_PASSWORD", "")
+PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "").rstrip("/")
+TELEGRAM_WEBHOOK_SECRET = os.getenv("TELEGRAM_WEBHOOK_SECRET", "")
 CBE_ACCOUNT_NAME = os.getenv("CBE_ACCOUNT_NAME")
 CBE_ACCOUNT_NUMBER = os.getenv("CBE_ACCOUNT_NUMBER")
 
