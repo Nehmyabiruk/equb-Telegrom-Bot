@@ -7,17 +7,16 @@ from datetime import datetime
 from pathlib import Path
 
 from contextlib import asynccontextmanager
-from secrets import compare_digest
 
 from aiogram.types import Update
-from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session, joinedload
 
 from bot import bot, dp
-from config import DASHBOARD_PASSWORD, PUBLIC_BASE_URL, TELEGRAM_WEBHOOK_SECRET
+from config import PUBLIC_BASE_URL, TELEGRAM_WEBHOOK_SECRET
 from database import get_db, init_db
 from models import Payment, User
 from pdf_generator import generate_approved_users_pdf
@@ -167,16 +166,7 @@ def get_rejected_users(db: Session = Depends(get_db_session)):
 
 
 @app.get("/api/download-pdf")
-def download_pdf(
-    dashboard_password: str | None = Header(
-        default=None, alias="X-Dashboard-Password"
-    ),
-    db: Session = Depends(get_db_session),
-):
-    if DASHBOARD_PASSWORD and not compare_digest(
-        dashboard_password or "", DASHBOARD_PASSWORD
-    ):
-        raise HTTPException(status_code=401, detail="Invalid dashboard password")
+def download_pdf(db: Session = Depends(get_db_session)):
 
     payments = _get_approved_payments(db)
     participants = [_participant_payload(payment) for payment in payments]

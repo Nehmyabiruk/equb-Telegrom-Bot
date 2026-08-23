@@ -18,10 +18,6 @@ const els = {
   exportCsvBtn: document.getElementById("exportCsvBtn"),
   refreshBtn: document.getElementById("refreshBtn"),
   toast: document.getElementById("toast"),
-  pdfPasswordDialog: document.getElementById("pdfPasswordDialog"),
-  pdfPasswordForm: document.getElementById("pdfPasswordForm"),
-  pdfPasswordInput: document.getElementById("pdfPasswordInput"),
-  cancelPdfBtn: document.getElementById("cancelPdfBtn"),
 };
 
 function formatDate(isoString) {
@@ -178,19 +174,14 @@ function exportCsv() {
   showToast(`${rows.length} participant${rows.length === 1 ? "" : "s"} exported to CSV`);
 }
 
-async function downloadPdf(password) {
+async function downloadPdf() {
   try {
     els.downloadPdfBtn.disabled = true;
     els.downloadPdfBtn.textContent = "Generating…";
 
-    const response = await fetch("/api/download-pdf", {
-      headers: { "X-Dashboard-Password": password },
-    });
+    const response = await fetch("/api/download-pdf");
     if (!response.ok) {
-      const message = response.status === 401
-        ? "Incorrect dashboard password"
-        : "PDF download failed";
-      throw new Error(message);
+      throw new Error("PDF download failed");
     }
 
     const blob = await response.blob();
@@ -219,19 +210,7 @@ async function downloadPdf(password) {
 els.searchInput.addEventListener("input", () => renderTable(allParticipants));
 els.methodFilter.addEventListener("change", () => renderTable(allParticipants));
 els.exportCsvBtn.addEventListener("click", exportCsv);
-els.downloadPdfBtn.addEventListener("click", () => {
-  els.pdfPasswordInput.value = "";
-  els.pdfPasswordDialog.showModal();
-  els.pdfPasswordInput.focus();
-});
-els.cancelPdfBtn.addEventListener("click", () => els.pdfPasswordDialog.close());
-els.pdfPasswordForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  const password = els.pdfPasswordInput.value;
-  if (!password) return;
-  els.pdfPasswordDialog.close();
-  downloadPdf(password);
-});
+els.downloadPdfBtn.addEventListener("click", downloadPdf);
 els.refreshBtn.addEventListener("click", refreshDashboard);
 
 refreshDashboard();
